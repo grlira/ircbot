@@ -1,35 +1,20 @@
 class IrcMessage
     attr_reader :content, :nick, :command, :target, :serverName
     def initialize(line)
-        if line[0] == ':'
-            hasPrefix = true
-        else
-            hasPrefix = false
-        end
-
         parts = line.split(':')
-        if hasPrefix
-            meta = parts[1].split(' ')
-            prefix = meta[0]
-            @command = meta[1]
-            @target = meta[2] if meta[2] != nil
+        if line.start_with? ':'
+			prefix, @command, @target = parts[1].split
             @content = parts[2]
             if prefix.split('!').length > 1
                 @nick = prefix.split('!')[0]
             else
                 @serverName = prefix
             end
-            if target != nil
-                if target[0] != '#'
-                    @target = @nick
-                end
-            else
-                @target = @nick
-            end
+			unless @target and @target.start_with? '#'
+				@target = @nick
+			end
         else
-            meta = parts[0].split(' ')
-            @command = meta[0]
-            @target = meta[1] if meta[1] != nil
+			@command, @target = parts[0].split
             @content = parts[1]
         end
     end

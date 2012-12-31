@@ -56,15 +56,15 @@ if ARGV.length != 3
     exit 1
 end
 
-bot = IrcBot.new ARGV[0], ARGV[1], ARGV[2]
+bot = IrcBot.new *ARGV[0..2]
 bot.connect
 
 while line = STDIN.gets.chomp
-    if line == 'reload'
-        load 'handler.rb'
-    end
-    if line == 'quit'
-        bot.disconnect
-        exit
-    end
+	case line
+		when 'reload'
+			load 'handler.rb'
+		when 'quit'
+			bot.disconnect
+			exit
+	end
 end
