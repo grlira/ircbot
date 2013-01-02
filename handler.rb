@@ -21,17 +21,32 @@ class IrcMessage
 end
 
 class Handler
-    def handle(line, kernel)
+
+    def initialize(kernel)
+        @kernel = kernel
+    end
+
+    def handle(line)
         Kernel.puts line
         message = IrcMessage.new line
-        if message.command.chomp == "PRIVMSG" && message.content.chomp == "hi"
-            kernel.privmsg message.target, "hello there #{message.nick}"
+
+        if message.command.chomp == "PRIVMSG" || message.command.chomp == "NOTICE"
+            handle_chat message
         end
-        if message.command.chomp == "PRIVMSG" && message.content.chomp == "t"
-            kernel.privmsg message.target, "your test works, #{message.nick}"
+        if message.command.chomp == "433"
+            @kernel.nick_in_use
         end
         if message.command.chomp == "PING"
-            kernel.write "PONG :#{message.content}"
+            @kernel.write "PONG :#{message.content}"
+        end
+    end
+
+    def handle_chat(message)
+        if message.content.chomp == "hi, #{@kernel.nick}"
+            @kernel.privmsg message.target, "hello there #{message.nick}"
+        end
+        if message.content.chomp == "go away, #{@kernel.nick}"
+            @kernel.disconnect
         end
     end
 end
