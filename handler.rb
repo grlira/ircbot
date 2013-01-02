@@ -3,18 +3,18 @@ class IrcMessage
     def initialize(line)
         parts = line.chomp.split(':')
         if line.start_with? ':'
-			prefix, @command, @target = parts[1].split
+            prefix, @command, @target = parts[1].split
             @content = parts[2]
             if prefix.split('!').length > 1
                 @nick = prefix.split('!')[0]
             else
                 @serverName = prefix
             end
-			unless @target and @target.start_with? '#'
-				@target = @nick
-			end
+            unless @target and @target.start_with? '#'
+                @target = @nick
+            end
         else
-			@command, @target = parts[0].split
+            @command, @target = parts[0].split
             @content = parts[1]
         end
     end

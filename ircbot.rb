@@ -76,9 +76,9 @@ bot.connect
 while bot.connected
     line = STDIN.gets.chomp
     case line
-	when 'reload'
-		load 'handler.rb'
-	when 'quit'
-		bot.disconnect
+    when 'reload'
+        load 'handler.rb'
+    when 'quit'
+        bot.disconnect
     end
 end
