@@ -30,14 +30,14 @@ class Handler
         Kernel.puts line
         message = IrcMessage.new line
 		
-	case message.command
-	    when 'PRIVMSG', 'NOTICE'
-	        handle_chat message
-	    when '433'
-	        @kernel.nick_in_use
-	    when 'PING'
-	        @kernel.write "PONG :#{message.content}"
-	end
+    	case message.command
+    	    when 'PRIVMSG', 'NOTICE'
+    	        handle_chat message
+    	    when '433'
+    	        @kernel.nick_in_use
+    	    when 'PING'
+    	        @kernel.write "PONG :#{message.content}"
+    	end
     end
 
     def handle_chat(message)
@@ -46,8 +46,8 @@ class Handler
         end
         case message.content
             when "hi, #{@kernel.nick}"
-	        @kernel.privmsg message.target, "hello there #{message.nick}"
-	    when "go away, #{@kernel.nick}"
+	            @kernel.privmsg message.target, "hello there #{message.nick}"
+	        when "go away, #{@kernel.nick}"
                 @kernel.disconnect
         end
     end
