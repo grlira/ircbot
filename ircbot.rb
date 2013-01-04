@@ -1,3 +1,5 @@
+$LOAD_PATH.unshift File.dirname(__FILE__)
+
 require 'socket'
 require 'pp'
 
@@ -19,7 +21,7 @@ end
 
 class IrcBot
 
-    attr_reader :nick, :connected
+    attr_reader :nick, :connected, :channels
 
     def nick_in_use
         puts "Error: nick #{@nick} is in use on server"
@@ -32,6 +34,18 @@ class IrcBot
         @nick = nick
         @connected = false
         @handler = Handler.new self
+        @channels = {}
+    end
+
+    def join_channel(channel)
+        write "JOIN #{channel}"
+    end
+
+    def part_channel(channel)
+        if @channels[channel]
+            write "PART #{channel}"
+            @channels[channel] = nil
+        end
     end
 
     def connect
@@ -42,7 +56,6 @@ class IrcBot
         @socket.puts 'PASS password'
         @socket.puts "NICK #{@nick}"
         @socket.puts 'USER gustavo hostname servername :Gustavo Lira'
-        @socket.puts 'JOIN #mieicstudents'
         @connected = true
     end
 
@@ -72,6 +85,7 @@ end
 
 bot = IrcBot.new *ARGV[0..2]
 bot.connect
+bot.join_channel "#mieicbot"
 
 while bot.connected
     line = STDIN.gets.chomp
