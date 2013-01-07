@@ -8,12 +8,12 @@ load 'handler.rb'
 class TCPSocket
     def gets_nb
         Thread.new do
-            begin
-                while !closed?
+            while !closed?
+                begin
                     yield gets
+                rescue StandardError => exception
+                    Kernel.puts "#{exception.inspect}\n#{exception.backtrace.join "\n"}"
                 end
-            rescue
-                pp $!
             end
         end
     end
@@ -85,7 +85,7 @@ end
 
 bot = IrcBot.new *ARGV[0..2]
 bot.connect
-bot.join_channel "#mieicbot"
+bot.join_channel "#mieicstudents"
 
 while bot.connected
     line = STDIN.gets.chomp
