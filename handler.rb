@@ -1,4 +1,4 @@
-require 'channel.rb'
+require_relative 'channel'
 
 class IrcMessage
     attr_reader :content, :nick, :command, :target, :serverName
