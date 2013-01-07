@@ -3,7 +3,7 @@ require 'channel.rb'
 class IrcMessage
     attr_reader :content, :nick, :command, :target, :serverName
     def initialize(line)
-        parts = line.chomp.split(':')
+        parts = line.chomp.split(/(?:^| ):/, 3)
         if line.start_with? ':'
             prefix, @command, @target = parts[1].split ' ', 3
             if @target.split.length > 1
