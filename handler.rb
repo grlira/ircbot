@@ -57,43 +57,57 @@ class Handler
 	            @kernel.privmsg message.target, "hello there #{message.nick}"
         end
     end
-
+    
     def handle_command(message)
-        case message.content.split[0]
-            when "!say"
-                target = message.content.split[1]
-                @kernel.privmsg target, message.content.split[2..-1].join(' ') if target
-            when "!users"
-                channel = @kernel.channels[message.content.split[1]]
-                if channel == nil
-                    return
-                end
-                users = channel.users
-                if users
-                    @kernel.privmsg message.target, "In channel #{channel.name} I see users: #{users.join ' '}"
-                end
-            when "!join"
-                channel = message.content.split[1]
-                @kernel.join_channel channel if channel
-            when "!part"
-                channel = message.content.split[1]
-                if channel
-                    @kernel.part_channel channel if channel
-                elsif message.target.start_with? '#'
-                    @kernel.part_channel message.target.strip
-                end
-            when '!cycle'
-                if message.target.start_with? '#'
-                    @kernel.part_channel message.target.strip
-                    @kernel.join_channel message.target.strip
-                end
-            when "!reload"
-                @kernel.privmsg message.target, "Reloading handler"
-                load 'handler.rb'
-                @kernel.privmsg message.target, "Done"
-            when "!quit"
-                @kernel.disconnect
-
+        components = message.content.split
+        # Take out the ! symbol
+        command = components.shift[1..-1]
+        begin
+            send :"handle_#{command}", message, *components unless command == 'command'
+        # Ignore unrecognized handlers or commands with the wrong arguments
+        rescue NoMethodError, ArgumentError => exception
+            puts "#{exception.inspect}\n#{exception.backtrace.join "\n"}"
         end
+    end
+    
+    def handle_say(message, target, *words)
+        @kernel.privmsg target, words.join(' ')
+    end
+    
+    def handle_users(message, channel_name)
+        return unless channel = @kernel.channels[channel_name]
+        if users = channel.users
+            @kernel.privmsg message.target, "In channel #{channel.name} I see users: #{users.join ' '}"
+        end
+    end
+    
+    def handle_join(message, channel_name)
+        @kernel.join_channel channel_name
+    end
+    
+    def handle_part(message, channel_name = nil)
+        if channel_name
+            @kernel.part_channel channel_name
+        elsif message.target.start_with? '#'
+            @kernel.part_channel message.target.strip
+        end
+    end
+    
+    def handle_cycle(message)
+        if message.target.start_with? '#'
+            target = message.target.strip
+            @kernel.part_channel target
+            @kernel.join_channel target
+        end
+    end
+    
+    def handle_reload(message)
+        @kernel.privmsg message.target, "Reloading handler"
+        load 'handler.rb'
+        @kernel.privmsg message.target, "Done"
+    end
+    
+    def handle_quit(message)
+        @kernel.disconnect
     end
 end
