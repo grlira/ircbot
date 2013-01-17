@@ -1,4 +1,5 @@
 require_relative 'channel'
+require_relative 'user'
 
 module IRC
     class Message
@@ -7,7 +8,7 @@ module IRC
             parts = line.chomp.split(/(?:^| ):/, 3)
             if line.start_with? ':'
                 prefix, @command, @target = parts[1].split ' ', 3
-                if @target.split.length > 1
+                if @target && @target.split.length > 1
                     @target = @target.split[-1]
                 end
                 @content = parts[2]
@@ -36,12 +37,14 @@ module IRC
             Kernel.puts line
             message = Message.new line
         	case message.command
-        	    when 'PRIVMSG', 'NOTICE'
-        	        handle_chat message
-        	    when '433'
-        	        @kernel.nick_in_use
-        	    when 'PING'
-        	        @kernel.write "PONG :#{message.content}"
+        	when 'PRIVMSG', 'NOTICE'
+        	    handle_chat message
+                when 'QUIT'
+                    handle_client_quits message
+        	when '433'
+        	    @kernel.nick_in_use
+        	 when 'PING'
+        	    @kernel.write "PONG :#{message.content}"
                 when 'JOIN'
                     @kernel.channels[message.target] = Channel.new message.target
                 when '353'
@@ -49,7 +52,14 @@ module IRC
         	end
         end
 
+        def handle_client_quits(message)
+            @kernel.users[message.nick] = User.new(message.nick) unless @kernel.users[message.nick]
+            @kernel.users[message.nick].last_message = {channel: message.target, content: nil, quit: true}
+        end
+
         def handle_chat(message)
+            @kernel.users[message.nick] = User.new(message.nick) unless @kernel.users[message.nick]
+            @kernel.users[message.nick].last_message = {channel: message.target, content: message.content, quit: false}
             if message.content.start_with? '!'
                 handle_command(message)
             end
@@ -75,10 +85,26 @@ module IRC
             @kernel.privmsg target, words.join(' ')
         end
     
-        def handle_users(message, channel_name)
+        def handle_users(message, channel_name = nil)
+            channel_name = message.target.strip unless channel_name
             return unless channel = @kernel.channels[channel_name]
             if users = channel.users
                 @kernel.privmsg message.target, "In channel #{channel.name} I see users: #{users.join ' '}"
+            end
+        end
+
+        def handle_seen(message, user_name)
+            if user_name == message.nick
+                @kernel.privmsg message.target, "Looking for yourself, #{user_name}?"
+                return
+            end
+            return unless user = @kernel.users[user_name]
+            if last_message = user.last_message
+                if last_message[:quit]
+                    @kernel.privmsg message.target, "I last saw #{user_name} quitting"
+                else
+                    @kernel.privmsg message.target, "I last saw #{user_name} in #{last_message[:channel]} saying '#{last_message[:content]}'"
+                end
             end
         end
     

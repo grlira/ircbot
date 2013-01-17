@@ -19,7 +19,7 @@ end
 
 module IRC
     class Bot
-        attr_reader :nick, :connected, :channels
+        attr_reader :nick, :connected, :channels, :users
 
         def nick_in_use
             puts "Error: nick #{@nick} is in use on server"
@@ -33,6 +33,7 @@ module IRC
             @connected = false
             @handler = Handler.new self
             @channels = {}
+            @users = {}
         end
 
         def join_channel(channel)
