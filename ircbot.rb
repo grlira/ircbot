@@ -1,7 +1,7 @@
 require 'socket'
 require 'pp'
 
-load 'handler.rb'
+require_relative 'standard_handler'
 
 class TCPSocket
     def gets_nb
@@ -26,12 +26,13 @@ module IRC
             disconnect
         end
 
-        def initialize(address, port, nick)
+        def initialize(address, port, nick, handler)
             @address = address
             @port = port
             @nick = nick
             @connected = false
-            @handler = Handler.new self
+            @handler = handler
+            @handler.kernel = self
             @channels = {}
             @users = {}
         end
@@ -82,7 +83,7 @@ if ARGV.length != 3
     exit 1
 end
 
-bot = IRC::Bot.new *ARGV[0..2]
+bot = IRC::Bot.new *ARGV[0..2], IRC::StandardHandler.new
 bot.connect
 bot.join_channel "#mieicstudents"
 
