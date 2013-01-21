@@ -1,4 +1,5 @@
 require_relative 'channel'
+require_relative 'user'
 
 module IRC
     class Message
@@ -7,7 +8,7 @@ module IRC
             parts = line.chomp.split(/(?:^| ):/, 3)
             if line.start_with? ':'
                 prefix, @command, @target = parts[1].split ' ', 3
-                if @target.split.length > 1
+                if @target && @target.split.length > 1
                     @target = @target.split[-1]
                 end
                 @content = parts[2]
@@ -27,21 +28,25 @@ module IRC
     end
     
     class Handler
-
-        def initialize(kernel)
-            @kernel = kernel
+        # Returns the path to the file where this class is implemented. Required for !reload
+        def self.source_location
+            __FILE__
         end
+        
+        attr_writer :kernel
 
         def handle(line)
             Kernel.puts line
             message = Message.new line
         	case message.command
-        	    when 'PRIVMSG', 'NOTICE'
-        	        handle_chat message
-        	    when '433'
-        	        @kernel.nick_in_use
-        	    when 'PING'
-        	        @kernel.write "PONG :#{message.content}"
+        	when 'PRIVMSG', 'NOTICE'
+        	    handle_chat message
+                when 'QUIT'
+                    handle_client_quits message
+        	when '433'
+        	    @kernel.nick_in_use
+        	 when 'PING'
+        	    @kernel.write "PONG :#{message.content}"
                 when 'JOIN'
                     @kernel.channels[message.target] = Channel.new message.target
                 when '353'
@@ -49,44 +54,35 @@ module IRC
         	end
         end
 
-        def handle_chat(message)
-            if message.content.start_with? '!'
-                handle_command(message)
-            end
-            case message.content
-                when "hi, #{@kernel.nick}"
-    	            @kernel.privmsg message.target, "hello there #{message.nick}"
-            end
+        def handle_client_quits(message)
+            @kernel.users[message.nick] = User.new(message.nick) unless @kernel.users[message.nick]
+            @kernel.users[message.nick].last_message = {channel: message.target, content: nil, quit: true}
         end
+        
+        # By default, the handler does not respond to chat at 
+        def handle_chat(message); end
     
         def handle_command(message)
             components = message.content.split
             # Take out the ! symbol
             command = components.shift[1..-1]
+            # Ignore unrecognized commands
+            return unless respond_to? :"handle_#{command}!"
             begin
-                send :"handle_#{command}", message, *components unless command == 'command'
-            # Ignore unrecognized handlers or commands with the wrong arguments
-            rescue NoMethodError, ArgumentError => exception
+                send :"handle_#{command}!", message, *components
+            # Ignore commands with the wrong arguments
+            rescue ArgumentError => exception
                 puts "#{exception.inspect}\n#{exception.backtrace.join "\n"}"
             end
         end
-    
-        def handle_say(message, target, *words)
-            @kernel.privmsg target, words.join(' ')
-        end
-    
-        def handle_users(message, channel_name)
-            return unless channel = @kernel.channels[channel_name]
-            if users = channel.users
-                @kernel.privmsg message.target, "In channel #{channel.name} I see users: #{users.join ' '}"
-            end
-        end
-    
-        def handle_join(message, channel_name)
+        
+        # The basic commands are available for all handlers
+        
+        def handle_join!(message, channel_name)
             @kernel.join_channel channel_name
         end
     
-        def handle_part(message, channel_name = nil)
+        def handle_part!(message, channel_name = nil)
             if channel_name
                 @kernel.part_channel channel_name
             elsif message.target.start_with? '#'
@@ -94,7 +90,7 @@ module IRC
             end
         end
     
-        def handle_cycle(message)
+        def handle_cycle!(message)
             if message.target.start_with? '#'
                 target = message.target.strip
                 @kernel.part_channel target
@@ -102,13 +98,13 @@ module IRC
             end
         end
     
-        def handle_reload(message)
+        def handle_reload!(message)
             @kernel.privmsg message.target, "Reloading handler"
-            load 'handler.rb'
+            load self.class.source_location
             @kernel.privmsg message.target, "Done"
         end
     
-        def handle_quit(message)
+        def handle_quit!(message)
             @kernel.disconnect
         end
     end
