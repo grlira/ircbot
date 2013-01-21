@@ -77,7 +77,7 @@ module Parrot
                 end
             else
                 # If the word has not been seen before another word yet, just pick a random word
-                return 
+                random_word
             end
         end
         
@@ -108,8 +108,8 @@ module Parrot
             text = last_word.dup
             (length_next_block - 1).times do
                 word = random_word_after last_word
-                # Do not add spaces before punctation
-                text << " " if word !~ /[[:punct:]]/
+                # Do not add spaces before punctation or after slashes or hyphens
+                text << " " unless word =~ /[[:punct:]]/ or last_word =~ %r{[-\\/]}
                 text << word
                 last_word = word
             end
