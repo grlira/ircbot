@@ -6,12 +6,7 @@ module IRC
             __FILE__
         end
         
-        def handle_chat(message)
-            @kernel.users[message.nick] = User.new(message.nick) unless @kernel.users[message.nick]
-            @kernel.users[message.nick].last_message = {channel: message.target, content: message.content, quit: false}
-            if message.content.start_with? '!'
-                handle_command(message)
-            end
+        def handle_message(message)
             case message.content
                 when "hi, #{@kernel.nick}"
     	            @kernel.privmsg message.target, "hello there #{message.nick}"
