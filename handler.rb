@@ -59,8 +59,18 @@ module IRC
             @kernel.users[message.nick].last_message = {channel: message.target, content: nil, quit: true}
         end
         
-        # By default, the handler does not respond to chat at 
-        def handle_chat(message); end
+        def handle_chat(message)
+            @kernel.users[message.nick] = User.new(message.nick) unless @kernel.users[message.nick]
+            @kernel.users[message.nick].last_message = {channel: message.target, content: message.content, quit: false} 
+            if message.content.start_with? '!'
+                handle_command(message)
+            else
+                handle_message(message)
+            end
+        end
+        
+        # By default, the handler does not respond to chat except for commands
+        def handle_message(message); end
     
         def handle_command(message)
             components = message.content.split
