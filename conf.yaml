@@ -1,0 +1,7 @@
+:server: irc.freenode.org
+:port: 6667
+:nick: __bot__
+:shortname: Bot
+:longname: Botato
+:channels:
+    - "#mieicstudents"

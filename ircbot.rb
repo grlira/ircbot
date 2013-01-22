@@ -1,23 +1,8 @@
 require 'socket'
-require 'pp'
-
-require_relative 'standard_handler'
-
-class TCPSocket
-    def gets_nb
-        Thread.new do
-            while !closed?
-                begin
-                    yield gets
-                rescue StandardError => exception
-                    Kernel.puts "#{exception.inspect}\n#{exception.backtrace.join "\n"}"
-                end
-            end
-        end
-    end
-end
 
 module IRC
+    DEFAULT_PORT = 6667
+    
     class Bot
         attr_reader :nick, :connected, :channels, :users
 
@@ -26,12 +11,14 @@ module IRC
             disconnect
         end
 
-        def initialize(address, port, nick, handler)
-            @address = address
-            @port = port
-            @nick = nick
+        def initialize(options = {})
+            @address = options[:server]
+            @port = options[:port] || DEFAULT_PORT
+            @nick = options[:nick]
+            @shortname = options[:shortname]
+            @longname = options[:longname]
             @connected = false
-            @handler = handler
+            @handler = options[:handler]
             @handler.kernel = self
             @channels = {}
             @users = {}
@@ -55,7 +42,7 @@ module IRC
             end
             @socket.puts 'PASS password'
             @socket.puts "NICK #{@nick}"
-            @socket.puts 'USER gustavo hostname servername :Gustavo Lira'
+            @socket.puts "USER #@shortname hostname servername :#@longname"
             @connected = true
         end
 
@@ -68,33 +55,35 @@ module IRC
             Kernel.puts "Writing #{message}"
             @socket.puts message
         end
+        
+        def read_loop
+            until @socket.closed?
+                begin
+                    yield @socket.gets
+                rescue StandardError => exception
+                    Kernel.puts "#{exception.inspect}\n#{exception.backtrace.join "\n"}"
+                end
+            end
+        end
+        
+        def run_main_loop
+            read_loop {|line| @handler.handle line}
+        end
 
         def disconnect
             @socket.puts "QUIT bye"
             @socket.close
             @connected = false
-            exit
         end
     end
 end
 
 if __FILE__ == $0
-    if ARGV.length != 3
-        puts "Usage: <server> <port> <nick>"
-        exit 1
+    if ARGV.length < 1
+        puts "Usage: ircbot <configuration-file>"
+        exit
     end
-
-    bot = IRC::Bot.new *ARGV[0..2], IRC::StandardHandler.new
-    bot.connect
-    bot.join_channel "#mieicstudents"
-
-    while bot.connected
-        line = STDIN.gets.chomp
-        case line
-        when 'reload'
-            load 'handler.rb'
-        when 'quit'
-            bot.disconnect
-        end
-    end
+    require_relative 'kickstart'
+    require_relative 'standard_handler'
+    IRC::Bot.kickstart ARGV[0], IRC::StandardHandler.new
 end
