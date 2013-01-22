@@ -78,21 +78,23 @@ module IRC
     end
 end
 
-if ARGV.length != 3
-    puts "Usage: <server> <port> <nick>"
-    exit 1
-end
+if __FILE__ == $0
+    if ARGV.length != 3
+        puts "Usage: <server> <port> <nick>"
+        exit 1
+    end
 
-bot = IRC::Bot.new *ARGV[0..2], IRC::StandardHandler.new
-bot.connect
-bot.join_channel "#mieicstudents"
+    bot = IRC::Bot.new *ARGV[0..2], IRC::StandardHandler.new
+    bot.connect
+    bot.join_channel "#mieicstudents"
 
-while bot.connected
-    line = STDIN.gets.chomp
-    case line
-    when 'reload'
-        load 'handler.rb'
-    when 'quit'
-        bot.disconnect
+    while bot.connected
+        line = STDIN.gets.chomp
+        case line
+        when 'reload'
+            load 'handler.rb'
+        when 'quit'
+            bot.disconnect
+        end
     end
 end
