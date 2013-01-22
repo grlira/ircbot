@@ -1,6 +1,7 @@
 :server: irc.freenode.org
 :port: 6667
 :nick: __bot__
+:encoding: ISO-8859-1
 :shortname: Bot
 :longname: Botato
 :channels:

@@ -1,7 +1,6 @@
 require 'socket'
 
 module IRC
-    DEFAULT_PORT = 6667
     
     class Bot
         attr_reader :nick, :connected, :channels, :users
@@ -10,13 +9,17 @@ module IRC
             puts "Error: nick #{@nick} is in use on server"
             disconnect
         end
+        
+        DEFAULT_OPTIONS = {port: 6667, encoding: 'UTF-8'}
 
         def initialize(options = {})
+            options = DEFAULT_OPTIONS.merge(options)
             @address = options[:server]
-            @port = options[:port] || DEFAULT_PORT
+            @port = options[:port]
             @nick = options[:nick]
             @shortname = options[:shortname]
             @longname = options[:longname]
+            @encoding = options[:encoding]
             @connected = false
             @handler = options[:handler]
             @handler.kernel = self
@@ -37,9 +40,7 @@ module IRC
 
         def connect
             @socket = TCPSocket.new @address, @port
-            @socket.gets_nb do |line|
-                @handler.handle line
-            end
+            @socket.set_encoding @encoding, 'UTF-8'
             @socket.puts 'PASS password'
             @socket.puts "NICK #{@nick}"
             @socket.puts "USER #@shortname hostname servername :#@longname"
