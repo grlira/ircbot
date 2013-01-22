@@ -32,7 +32,7 @@ module Parrot
             @kernel.privmsg @kernel.channels.keys.first, @db.gen_block
         end
         
-        def handle_chat(message)
+        def handle_message(message)
             @db.process message.content
             Thread.new do
                 sleep rand(REPLY_INTERVAL)
@@ -49,8 +49,11 @@ if __FILE__ == $0
     end
     
     require_relative '../ircbot'
-    bot = IRC::Bot.new *ARGV[0..2], Parrot::Handler.new(Parrot::Database.new(ARGV[3]))
+    db = Parrot::Database.new(ARGV[3])
+    bot = IRC::Bot.new *ARGV[0..2], Parrot::Handler.new(db)
     bot.connect
     bot.join_channel "#mieicstudents"
     STDIN.gets
+    bot.disconnect
+    atexit { db.close }
 end
