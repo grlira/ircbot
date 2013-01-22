@@ -40,7 +40,7 @@ module IRC
 
         def connect
             @socket = TCPSocket.new @address, @port
-            @socket.set_encoding @encoding
+            @socket.set_encoding @encoding, 'UTF-8'
             @socket.puts 'PASS password'
             @socket.puts "NICK #{@nick}"
             @socket.puts "USER #@shortname hostname servername :#@longname"
