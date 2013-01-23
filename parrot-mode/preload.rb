@@ -12,7 +12,7 @@ ENTITIES = {
     '&apos' => "'"
 }
 
-file = File.read ARGV[0]
+file = File.read ARGV[0], encoding: "UTF-8"
 db = Parrot::Database.new ARGV[1]
 
 file.scan %r{<message.*?>(.*?)</message>} do |message,|

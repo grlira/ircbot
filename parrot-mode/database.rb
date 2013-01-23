@@ -1,7 +1,8 @@
 require 'sqlite3'
-require 'unicode_utils/u'
-require 'unicode_utils/nfkd'
+require 'unicode_utils/nfc'
 require 'unicode_utils/downcase'
+
+U = UnicodeUtils
 
 module Parrot
     # Calculates the average standard deviation of the elements of the given array.
@@ -76,6 +77,7 @@ module Parrot
                     return record['second'] if pick < 0
                 end
             else
+                puts "Picking random word after #{word}"
                 # If the word has not been seen before another word yet, just pick a random word
                 random_word
             end
@@ -83,7 +85,7 @@ module Parrot
         
         # Normalizes the case and combining mark representations of the given word, returning the result. 
         def normalize_word(word)
-            U.downcase(U.nfkd(word))
+            U.downcase(U.nfc(word))
         end
         
         # Reads a block of text, records all words found in it and its length.
