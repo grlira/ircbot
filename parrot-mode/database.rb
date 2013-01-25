@@ -1,6 +1,7 @@
 require 'sqlite3'
 require 'unicode_utils/nfc'
 require 'unicode_utils/downcase'
+require 'unicode_utils/titlecase'
 
 U = UnicodeUtils
 
@@ -107,12 +108,14 @@ module Parrot
         # Returns a block of text with a random number of words, based on the average of the last few blocks processed. The resulting block will always be at least one word long.
         def gen_block
             last_word = random_word
-            text = last_word.dup
+            text = U.titlecase(last_word)
             (length_next_block - 1).times do
                 word = random_word_after last_word
                 # Do not add spaces before punctation or after slashes or hyphens
                 text << " " unless word =~ /[[:punct:]]/ or last_word =~ %r{[-\\/]}
-                text << word
+                # Capitalize words at the start of phrases
+                print_word = last_word =~ /[.!?]/ ? U.titlecase(word) : word
+                text << print_word
                 last_word = word
             end
             text

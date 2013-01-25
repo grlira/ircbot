@@ -6,7 +6,7 @@ module Parrot
     class Handler < IRC::Handler
         # The range of times that the handler may take before emitting a message on its own or as a reply.
         STANDALONE_INTERVAL = 10..60
-        REPLY_INTERVAL = 1..3
+        REPLY_INTERVAL = 1..5
         
         def self.source_location
             __FILE__
