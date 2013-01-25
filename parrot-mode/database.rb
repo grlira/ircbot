@@ -9,7 +9,7 @@ module Parrot
     # Calculates the average standard deviation of the elements of the given array.
     def self.avg_stddev(array)
         avg = array.reduce(:+) / array.size
-        [avg, Math.sqrt(array.reduce(0) {|total, x| total + (x - avg) ** 2})]
+        [avg, Math.sqrt(array.reduce(0) {|total, x| total + (x - avg) ** 2} / array.size)]
     end
     
     # Returns a random number drawn from a normal distribution with the given average and standard deviation.
